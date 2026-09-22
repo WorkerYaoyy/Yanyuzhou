@@ -1,0 +1,1181 @@
+研宇宙（Research Universe）· 产品功能与接口需求文档
+项目
+内容
+文档版本
+v2.0（以当前设计稿为准）
+生成日期
+2026-09-22
+设计来源
+MasterGo 文件 新文件（documentId 204988343069024，页面 M）
+覆盖范围
+当前画布 11 个顶层帧（P0、P1、P2-1、P3–P8、G5、P2-3）
+文档定位
+前端 / 后端 / 测试 可直接开发的接口与功能契约
+阅读对象
+产品、前端、后端、测试、合规
+
+v2.0 变更说明：本文档以当前画布为唯一事实来源。上一版（v1.0）基于旧结构（13 帧，含独立「确认中心 G2 / 合规中心 G4」），当前设计稿已重构： - G2 确认中心、G4 合规中心已删除，相关能力并入 P8-导出中心（产物导出 + 导出合规校验 + AI 使用情况说明）与 P2-3-项目设置（数据分级）。 - 帧重命名：P2 研究热点 → P2-1 研究可行性分析、G3 导出中心 → P8 导出中心、G6 项目设置 → P2-3 项目设置。 - 顶栏右侧工具区简化为：用户信息区（通知+头像） + 导出中心 按钮（原「账号设置 / 新手·专家模式切换」已移除）。 设计稿中业务数据均为演示样例，仅说明字段形态。接口路径为建议命名，需与后端最终对齐。
+
+0. 阅读指引
+第 3 章「全局设计变量」：设计稿未定义 MasterGo 变量集（get_variables 返回 0 collections / 0 variables），全部为硬编码值。本章固化为可落地的 Design Tokens，前端应以此为唯一视觉来源。
+第 4 章「功能需求」：逐模块描述页面元素、交互、字段与状态，严格对应当前 11 帧。
+第 5 章「接口需求」：按模块给出 REST 接口定义（含请求/响应示例、错误码）。AI 类耗时能力统一采用异步任务模式。
+第 9 章附录：页面–接口矩阵、术语表、设计稿遗留不一致清单（建议设计侧修正）。
+
+1. 产品概述
+1.1 产品定位
+研宇宙是面向高校科研场景的可信 AI 科研工作台，覆盖「研究可行性分析 → 文献综述 → 数据分析 → 论文写作 → 选刊投稿 → 模拟评审 → 成果导出」的科研全链路。
+1.2 核心价值主张（来自登录页文案）
+可信的 AI 科研工作台 —— 引用可溯源 · 分析可复现 · 过程可交代
+能力
+说明
+对应模块
+双 Agent 核验
+引用与论断一致率 ≥ 99%
+P3 文献综述、P7 模拟评审
+分析可复现
+沙箱执行 + Python / R 代码包导出
+P4 数据分析、P8 导出中心
+全流程留痕
+一键导出《AI 使用情况说明》满足投稿披露
+P8 导出中心
+
+1.3 目标用户与角色（项目内成员，见 P2-3）
+角色
+说明
+权限（据 P2-3 项目设置）
+第一作者 / 所有者
+项目创建者
+全部权限（含删除、定稿与数据整合生成）
+导师
+指导者
+查看产物概览 / 改状态 / 核跟踪状态 / 评论与追问；数据权限受限
+协作学生
+同门 / 组员
+可编辑产物与参与核对；不可导出、不可定稿
+未认证访客
+未登录
+仅可浏览公开数据与定价页
+
+平台设「学生认证」流程（教育邮箱 / 学信网核验），认证后解锁学生价与额外额度（见 P0、G5）。
+1.4 终端形态
+桌面 Web 优先：画板基准 1440 × 900（P0 登录页固定 900px 高）。
+顶栏导航固定 56px 高；内容区自适应。
+
+2. 信息架构
+2.1 页面地图（当前 11 帧）
+帧 ID
+画布帧名称
+模块归类
+建议路由
+主导航 active
+29:08600
+P0-登录与认证
+账号
+/login
+无顶栏
+23:985
+P1-首页-工作台
+工作台
+/dashboard
+工作台
+23:4490
+P2-1-研究可行性分析
+论文引言
+/projects/:id/feasibility
+论文引言
+23:01106
+P3-文献综述
+论文引言
+/projects/:id/literature
+论文引言
+29:754
+P4-数据分析
+数据统计
+/projects/:id/data
+数据统计
+29:5683
+P5-论文写作
+论文写作
+/projects/:id/writing
+论文写作
+29:9836
+P6-选刊AI
+论文写作
+/projects/:id/journal
+论文写作
+29:04262
+P7-模拟评审
+论文评审
+/projects/:id/review
+论文评审
+29:13980
+P8-导出中心
+成果导出
+/projects/:id/export
+右侧导出中心（当前未高亮）
+29:20661
+G5-定价页
+账号
+/pricing
+论文引言
+29:24571
+P2-3-项目设置
+项目
+/projects/:id/settings
+论文引言
+
+已删除帧（旧结构）：G2 确认中心 (29:10279)、G4 合规中心 (29:17297)。
+2.2 顶栏导航体系（全站统一）
+左侧主导航（固定 5 项）：工作台 ｜ 论文引言 ｜ 数据统计 ｜ 论文写作 ｜ 论文评审
+主导航项
+归属页面
+工作台
+P1
+论文引言
+P2-1（研究可行性分析）、P3（文献综述）
+数据统计
+P4
+论文写作
+P5、P6
+论文评审
+P7
+
+右侧工具区（当前设计）：用户信息区（通知铃铛 + 未读红点计数 + 头像 + 昵称/学科年级）→ 导出中心 按钮（跳 P8）
+按当前页面自动切换主导航 active 态；P0 登录页不显示顶栏。当前 P8 页顶栏无高亮项（设计如此）。
+2.3 模块 ↔ 页面 ↔ 能力映射
+账号     : P0 登录与认证 / G5 定价页工作台   : P1 首页-工作台论文引言 : P2-1 研究可行性分析 → P3 文献综述数据统计 : P4 数据分析论文写作 : P5 论文写作 → P6 选刊AI论文评审 : P7 模拟评审成果导出 : P8 导出中心（产物导出 + 合规校验 + AI 使用情况说明）项目     : P2-3 项目设置（含数据分级）
+
+3. 全局设计变量（Design Tokens）
+现状：经 get_variables 查询，本文件 collections = 0、variables = 0，未定义任何 MasterGo 变量集。所有视觉值均为硬编码。本节据设计稿实测值整理为 Design Tokens，建议前端以此为唯一来源。
+3.1 色彩令牌（Color）
+Token 建议名
+值
+用途
+--color-primary
+#2E5FA3
+主色：主按钮、active 导航、链接、Logo 底、聚焦边框
+--color-primary-hover
+#27528E（建议）
+主按钮 hover
+--color-primary-active
+#204677（建议）
+主按钮 active / 按下
+--color-primary-weak-bg
+#F7F9FC
+浅主色底：次级按钮底、浅底卡片
+--color-text-primary
+#1F2937
+标题、正文强调
+--color-text-secondary
+#4B5563
+正文、次要说明
+--color-text-muted
+#6B7280
+辅助文字
+--color-text-tertiary
+#9CA3AF
+占位符、脚注、弱提示
+--color-border
+#E5E7EB
+全局边框 / 分割线
+--color-bg-page
+#FFFFFF
+页面 / 卡片底
+--color-bg-subtle
+#F7F9FC
+页面浅底 / 品牌侧栏底
+--color-bg-subtle-2
+#F3F4F6
+分段控件底、代码底
+--color-success
+#2E7D32
+成功 / 通过
+--color-success-bg
+#E8F5E9
+成功底
+--color-success-border
+#A5D6A7
+成功边框
+--color-danger
+#C0392B
+错误 / 阻断 / 未满足
+--color-danger-bg
+#FEF2F2（建议）
+危险底
+--color-danger-border
+#F5C6C6（建议）
+危险边框
+--color-warning
+#B45309
+警示文字
+--color-warning-bg
+#FFF7E6
+警示底（提示条）
+--color-warning-border
+#FFE0A3
+警示边框
+--color-info
+#2E5FA3
+信息文字
+--color-info-bg
+#EAF1FB
+信息底
+
+3.2 字体令牌（Typography）
+字体族：Inter（拉丁） + 系统中文字体回退（"PingFang SC", "Microsoft YaHei", sans-serif）。
+Token 建议名
+字号 / 行高
+字重
+用途
+--font-title-xl
+34 / 44
+600
+登录页主标题
+--font-title-l
+18 / 24
+600
+页面/卡片标题
+--font-title-m
+16 / 20
+500
+验证码数字
+--font-title-s
+15 / 20
+600
+区块标题、Logo 中文
+--font-body
+14 / 20
+400 / 500
+导航项、按钮主文
+--font-body-s
+13 / 18
+400
+正文主力字号
+--font-caption
+12 / 18
+400
+辅助说明、小按钮
+--font-caption-s
+11 / 16
+400
+脚注、标签
+--font-micro
+10 / 12
+500 / 600
+徽标（badge）、计数点
+--font-logo-en
+9 / 10
+500
+Logo 英文（letter-spacing 1px）
+
+3.3 间距 / 圆角 / 描边（Spacing / Radius / Border）
+Token 建议名
+值
+用途
+--space-1 ~ --space-16
+4 / 6 / 8 / 10 / 12 / 14 / 16 / 20 / 24 / 28 / 32 / 48 / 64
+间距阶梯
+--radius-xs
+4px
+标签 / 徽标
+--radius-sm
+6px
+按钮 / 输入框 / 小卡片 / Logo 块
+--radius-md
+8px
+卡片 / 登录卡
+--radius-full
+9999px
+头像 / 圆点 / 计数气泡
+--border-width
+1px
+全局描边
+--nav-active-underline
+2px
+主导航 active 下划线
+
+3.4 关键组件规格
+组件
+规格
+顶栏（top-nav）
+高 56px，左右 padding 32px，底边框 1px #E5E7EB
+主导航项
+高 56px，左右 padding 14px，active=主色文字 + 2px 主色下划线
+头像
+32×32，圆角全，主色底，白字
+通知红点
+16×16 圆，#C0392B 底，白字
+右侧「导出中心」按钮
+高 30px，padding 左右 12px，圆角 6px（inactive：底 #F7F9FC / 边 #E5E7EB / 图标+文字 #2E5FA3）
+按钮（大/主）
+高 40px，圆角 6px，主色底白字
+按钮（中）
+高 38px
+按钮（次）
+高 34px，白底 #E5E7EB 描边
+输入框
+高 40px（登录）/ 38px，圆角 6px，#E5E7EB 描边
+验证码格
+44×44，圆角 6px
+标签 / 徽标
+高约 18px，圆角 4px，语义底色
+
+3.5 状态与双态规范
+场景
+规范
+主导航 active
+文字 #2E5FA3 + 字重 500 + 底边 2px #2E5FA3
+主导航 inactive
+文字 #4B5563 + 字重 400 + 底边 2px transparent
+危险阻断卡
+底 #FEF2F2 / 边 #F5C6C6 / 文字 #C0392B
+警示提示条
+底 #FFF7E6 / 边 #FFE0A3 / 文字 #B45309
+成功提示条
+底 #E8F5E9 / 边 #A5D6A7 / 文字 #2E7D32
+方法卡「推荐」标签
+主色徽标
+
+3.6 建议落地（CSS 变量）
+:root {  --color-primary: #2E5FA3;  --color-primary-hover: #27528E;  --color-primary-active: #204677;  --color-primary-weak-bg: #F7F9FC;  --color-text-primary: #1F2937;  --color-text-secondary: #4B5563;  --color-text-muted: #6B7280;  --color-text-tertiary: #9CA3AF;  --color-border: #E5E7EB;  --color-bg-page: #FFFFFF;  --color-bg-subtle: #F7F9FC;  --color-bg-subtle-2: #F3F4F6;  --color-success: #2E7D32; --color-success-bg: #E8F5E9; --color-success-border: #A5D6A7;  --color-danger: #C0392B;  --color-danger-bg: #FEF2F2;  --color-danger-border: #F5C6C6;  --color-warning: #B45309; --color-warning-bg: #FFF7E6; --color-warning-border: #FFE0A3;  --radius-xs: 4px; --radius-sm: 6px; --radius-md: 8px;  --nav-height: 56px; --page-padding-x: 32px;  --font-family: Inter, "PingFang SC", "Microsoft YaHei", sans-serif;}
+
+4. 功能需求（分模块，对应当前 11 帧）
+4.1 P0 登录与认证 /login
+布局：左品牌区（#F7F9FC，宽自适应）+ 右认证区（固定 480px）。无顶栏导航。
+区域
+元素
+交互 / 规则
+品牌区
+Logo「研宇宙 / RESEARCH UNIVERSE」
+静态
+品牌区
+主标题「可信的 AI 科研工作台」+ 副标题「引用可溯源 · 分析可复现 · 过程可交代」
+静态
+品牌区
+3 条能力点（✓ 双 Agent 核验 / 分析可复现 / 全流程留痕）
+静态
+品牌区
+脚注「L1 / L2 数据默认不进入任何训练集；敏感字段强制脱敏后方可继续。」
+静态
+登录卡
+「手机号或邮箱」输入 + 「发送验证码」按钮
+发送后按钮倒计时（示例 52s 后重发）
+登录卡
+6 位验证码输入（44×44 格）
+聚焦格高亮主色边框；填满自动提交
+登录卡
+「登录 / 注册」主按钮
+未填齐禁用
+登录卡
+分隔「其他方式」+「微信快捷登录」「学信网快捷核验」
+OAuth / 第三方核验
+登录卡
+「登录即表示同意《用户协议》与《学术诚信使用规范》」
+协议跳转
+学生认证卡
+标题「学生认证」+ 状态徽标（已核验 / 未核验）
+教育邮箱认证：.edu / .edu.cn
+学生认证卡
+教育邮箱输入 + 「认证」按钮
+提交后校验域名与真实性
+学生认证卡
+「没有教育邮箱？改用学信网在线验证报告核验」
+备选路径
+学生认证卡
+成功条「学生身份已核验，权益已同步至定价与额度系统」
+认证成功后展示
+认证区
+脚注「认证失效（毕业 / 邮箱注销）后 90 天宽限期内平滑降级，不会锁死你的数据。」
+规则说明
+
+认证状态机：未认证 → 认证中 → 已核验（有效期）→ 失效（90 天宽限期）→ 降级
+4.2 P1 首页-工作台 /dashboard
+布局：两栏（主区 + 右侧约 320px 侧栏）。主导航 active = 工作台。
+区域
+元素
+交互 / 规则
+顶部
+问候「早上好，陈同学」+ 徽标「研究生认证待审」
+按时间问候；认证状态徽标
+顶部
+副标题待办聚合：「2 条文献综述待项目确认（导出中心），『社交媒体与手机依赖』距中期检查还有 12 天。」
+动态聚合待办与 DDL
+主区
+区块标题「我的项目」+「新建项目」主按钮
+新建项目
+主区
+项目卡 × N
+每卡：标题、状态徽标、进度条 + 百分比、标签（学科/驱动/最近编辑/待办/引用量）、「进入项目 >」
+侧栏
+DDL 倒计时日历
+开题报告 / 中期检查 / 论文提交 / 学位答辩（倒计时天数）
+侧栏
+阶段进度：选题 / 文献综述 / 数据分析 / 论文写作 / 模拟答辩
+各阶段状态与时间
+侧栏
+警示条（如「中期检查剩余 12 天；文献综述已逾期 3 天，建议优先处理 20 篇待读。」）
+风险提示
+侧栏
+项目进度推演（数据 / 文献综述 / 模型拟合 / 论文写作 / 答辩预备 各完成项数）
+进度推演
+侧栏
+本周已完成事项列表 + 状态
+完成项聚合
+
+项目状态枚举：选题中 / 文献综述中 / 数据分析中 / 论文写作中 / 返修中 / 已归档
+4.3 P2-1 研究可行性分析 /projects/:id/feasibility
+主导航 active = 论文引言。页签：生成分析报告（active）｜研究方向输入。
+区域
+元素
+交互 / 规则
+左
+「研究不足与展望（原文摘要）」列表
+每条约：结论摘要 + 来源 + 年份 + 被引数；「展开」查看全部
+左
+「高被引综述精选（原文摘要）」列表（共 4 篇）
+每篇：标题 + 被引数 + DOI 已验证 徽标 + 期刊/年份；「链接」跳原文
+左
+「近年社会焦虑的研究趋势 2021–2025」折线图
+基于 1,284 篇真实文献的年度趋势
+右
+「自拟选题三维可行性评分（总分 5 分）」
+三维度：文献质量 / 数据可得性 / 方案复杂度，各含分值 + 说明
+右
+「公共数据库导航」（共 14 个库）
+页签：计算机 / 心理学 / 医学 / 社会科学 / 经济学 / 人文艺术；筛选：开放获取 / 数据可下载 / 提供 API
+右
+数据库条目
+每条：名称、标签（一键直接导入 / 需自行申请）、说明
+右
+「我要自己收数据」
+数据采集设置 / 量表来源与校对 / 自动追踪
+底部
+「已确认纳入文献 1,284 篇」+「确认方向，进入文献综述」主按钮
+流转至 P3
+
+可行性评分维度：文献质量、数据可得性、方案复杂度（各 0–5，展示 1 位小数）
+4.4 P3 文献综述 /projects/:id/literature
+主导航 active = 论文引言。页签：研究热点｜双 Agent 核验｜综述生成｜检索（active）。
+区域
+元素
+交互 / 规则
+顶部
+检索框 + 筛选（排序/时间范围/学科/分区）+「共 1,284 条检索结果」
+自然语言检索 + 高级筛选
+顶部
+提示条「中英文混合来源，本页默认以英文文献为主（中文占比 4%）。注册并登录后可在中文库导出。」
+来源说明
+左
+文献卡列表
+每卡：标题、作者/期刊/年份/分区、DOI 已验证 徽标、摘要结论、标签、关注点；预印本标记「未经同行评审」
+右
+「已选文献集」+「生成结构化综述」
+已选入参考文献集
+右
+「双 Agent 核验进度」
+Agent A · 内容一致性（示例 96%）/ Agent B · DOI 真实性（示例 99%）；结果分流：通过 / 存疑 / 失败
+右
+「知识库问答」
+基于已读文献的问答；「生成领域认知综述」「生成可读文献包（PDF）」
+底部
+「26 条文献已通过至 Agent 核验」+「导入写作 >」
+流转至 P5
+
+双 Agent 核验结论枚举：通过 / 存疑 / 失败
+4.5 P4 数据分析 /projects/:id/data
+主导航 active = 数据统计。步骤条：数据导入 → 数据体检 → 方法选择（active）→ 分析结果；右上角数据版本 v2 · 350 行 × 42 列 · 1 个数据集。
+区域
+元素
+交互 / 规则
+左
+「候选统计方法清单」对比卡 × 3
+分组回归 + Bootstrap 中介（推荐）/ 结构方程模型 SEM / PROCESS Model 7；各含适用场景、优点、缺点、时间成本
+左
+方法选择表单 +「确认选择并执行」
+确认后触发分析任务
+左
+「数据体检报告」卡
+关键指标：样本数（350）、变量数（42）、缺失率（1.8%）、异常值（7）；异常变量提示（如 social_support 完全缺失已剔除）
+左
+「数据导入」卡
+支持格式：CSV / XLSX / SPSS .sav / Stata .dta / 公共数据库；已导入文件列表 + 校验状态；字段自动识别提示
+右
+「可复现代码」（Python / R）
+展示可复现代码块
+右
+「稳健性检验」
+SEM + 分组回归 / PROCESS Model 7 对比；「查看检验表」；正则和系数群样本差异（n=14）「待执行」
+右
+「缺失值分布」
+横向条形图；完全缺失变量单独标注
+
+方法枚举：group_regression_bootstrap / sem / process_model_7
+数据体检指标：row_count、column_count、missing_rate、outlier_count、problem_variables[]
+4.6 P5 论文写作 /projects/:id/writing
+主导航 active = 论文写作。页签：AI 全文生成（active）｜AI 摘要写作｜传统模式（可在线同一份内容持续编辑）。
+区域
+元素
+交互 / 规则
+顶部
+「引用部分从已核验文献池选择」「预览切换」
+引用来源限定已核验文献
+左
+「写作大纲」树
+章节层级（引言 / 研究背景 / 研究空白 / 文献综述 / 研究方法 / 结果 / 讨论与结论）+ 各章字数/引用数；「生成 / 重置大纲」
+中
+论文正文编辑器（在线编辑）
+标题、摘要、正文；内联引用角标（[1] [2]）；选中后操作条：重写 / 智能扩写 / 降重 / 学术化改写（仅选中部分，不应用 AI 全文）
+中
+底部统计「字数 / 引用 / AI 生成内容占比（已同步生成）」
+实时统计 + AI 占比标注
+右
+「引用引擎（CSL）」
+样式：APA 7 / GB/T 7714；引用列表（已核验 12 篇）；页内引用与参考文献自动同步，增删文献自动更新
+右
+「AI 使用声明」提示
+如《心理学报》要求披露 AI 使用情况、禁止 AIGC 直接结论等投稿约束提醒
+右
+「Zotero 联动」
+OAuth 授权（zotero.org）；双向同步（读取时指定文件夹）；范围：导入 / 导出（Better BibTeX）
+底部
+「完成初稿，进入选刊 >」
+流转至 P6
+
+4.7 P6 选刊AI /projects/:id/journal
+主导航 active = 论文写作。页签：数据范围｜文献证据｜手机数据｜匹配度｜中介效应｜分区推荐（等分析维度页签）。
+区域
+元素
+交互 / 规则
+顶部
+稿题 + 摘要说明 +「重新匹配」
+重新匹配
+左
+「推荐期刊（共 5 本）」
+每本：期刊名、JCR Q1 · 中科院分区 · IF · 出版社、已匹配分数、期刊定位说明、「查看画像 >」
+右
+「期刊画像」（选中期刊）
+收录年份、出版社、收录学科、审稿周期、接收率、影响因子、五年影响因子、版面费、索引、排名
+右
+「声明 AI 使用策略」
+期刊对 AI 辅助写作 / AIGC 直接生成结论的披露要求
+右
+「投稿前检查清单」（示例 5/8 完成）
+检查项：格式合规、参考文献格式（APA 7）、字数限制、图表规范、AI 使用说明文件齐备、伦理数据引用检查声明…
+右
+「生成投稿报告（跳转导出中心）」
+生成结果进入 P8
+底部
+「本页仅提供投稿决策辅助，不确保『保证录用 / 大概率必中』等承诺；所有第三方统计指标来源为公开可查。」+「导出候选包 >」
+免责声明 + 导出
+
+4.8 P7 模拟评审 /projects/:id/review
+主导航 active = 论文评审。标题：评审对象（稿题）+ 目标期刊 +「重新校检」。
+区域
+元素
+交互 / 规则
+顶部
+提示条「校审摘要：已学习同领域评审协议 48 篇；真实审稿意见语料 312 条；校审完成 09:05」
+评审风格学习
+左
+问题卡分组：硬伤（方法论/统计/逻辑错误）、争议点（审稿人可能质疑、学界有分歧）、风格建议（表达与结构）
+每卡：编号（H1/H2/D1/D2/S1/S2）、描述、提交建议并修改 / 标记争议 / 生成回应
+右
+「修改建议」
+按编号给出具体修改路径；「查看全部 8 条修改路径」
+右
+「Rebuttal 辅助」+「生成完整 Rebuttal 草稿」
+逐条回应审稿意见；生成完整答辩草稿
+右
+未改提示「本次模拟评审未改文字（32 条）…请人工确认」
+人工复核
+底部
+「修改概览：已采纳 3 · 标记争议 2 · 忽略 1 · 校审语料 312 条」+「输出修改稿与 Rebuttal 草稿 >」
+输出
+
+问题严重度枚举：严重（硬伤） / 争议 / 风格
+4.9 P8 导出中心 /projects/:id/export
+本页为合并后的导出中心：产物导出 + 导出合规校验 + AI 使用情况说明（原 G2 确认 / G4 合规的核心能力已并入此处与 P2-3）。当前主导航无高亮项。
+区域
+元素
+交互 / 规则
+左
+「产物导出（共 8 项）」列表
+每项：产物名、生成时间、大小、校验状态徽标（双 Agent 已核验 / 已脱敏与预处理 / 数据完整性核查）；导出格式按钮：md / docx / PDF（代码包为 ZIP）
+左
+「存在无法校验的判情」（红色阻断卡）
+示例：「存在 1 条参考文献无法验证…」操作：上传文稿PDF、我已确认，允许导出
+右
+「导出合规校验」
+红色阻断条目数 / 未核验文献数 / AI 标识完整性（示例 100%）
+左
+「《AI 使用情况说明》一键生成」
+依据《人工智能生成合成内容标识办法》与 GB 45438-2025；覆盖项：平台名称与版本与申明时间轴线、原始提问与生成内容记录、双 Agent 核验结果摘要、主体确认应用记录、开源代码引用清单（含许可证）、P7 评审记录（校审语料 312 条）、待核验项自动标注（当前 14 条）；「生成校验报告」
+底部
+「所有 AI 生成内容均不可移除核验标识；导出时自动携带标注记录与生成记录。」+「导出已选产物」主按钮
+一键打包导出
+
+产物类型：structured_review、data_health_report、analysis_package、manuscript_draft、reproducible_code、submission_package
+4.10 G5 定价页 /pricing
+主导航 active = 论文引言。
+区域
+元素
+交互 / 规则
+顶部
+认证横幅「已认证学生：学生版 ¥19/月（含送 Agent 模拟额度）；学生权益已生效」+「查看认证 >」
+认证态展示
+主区
+套餐卡 × 3：学生版 ¥19/月（适合大学生）/ 专业版 ¥49/月（适合硕士/博士/科研人员，最受欢迎）/ 团队版 ¥129/月/成员（课题组/实验室）
+权益勾选项；按钮：当前套餐 / 升级到专业版 / 联系销售
+主区
+「额度公示表」（每月 1 日 00:00 重置）
+维度：文献检索次数、综述生成、双 Agent 核验、沙箱算力、导出次数 × 学生版/专业版/团队版
+底部
+「超额处理方式」
+默认连续不中断但排队降级；可开启超额付费按量计费并实时提醒；次月 1 日重置，不作补偿、不结转
+
+额度维度：literature_search、review_generation、agent_verification、sandbox_minutes、export_count
+套餐枚举：student / pro / team
+4.11 P2-3 项目设置 /projects/:id/settings
+主导航 active = 论文引言。
+区域
+元素
+交互 / 规则
+顶部
+项目名 + 元信息（学科 · 驱动 · 创建时间）+「保存更改」
+保存
+左
+「项目信息」
+项目名称、学科领域、驱动路线、DDL 节点（开题 / 中期 / 论文 / 答辩）
+左
+「成员管理」+「邀请成员」
+表：成员 / 角色 / 权限；角色：第一作者 / 导师 / 协作学生
+左
+「版本历史」（保留最近 3 个月版本）
+版本条目：版本号 / 操作人 / 时间 / 说明 +「回滚」
+右
+「选择您的数据类型」数据分级设定
+L0 公开 / L1 个人（当前） / L2 敏感 + 说明；「保存设定」
+右
+级别影响说明
+数据级别同步影响：P4 数据导入拦截、导出校验、确认红色须在导出中心完成等
+
+成员角色枚举：owner / mentor / collaborator
+数据分级枚举：L0 / L1 / L2
+
+5. 接口需求（API）
+5.1 通用约定
+项
+约定
+风格
+RESTful，JSON over HTTPS
+前缀
+/api/v1
+鉴权
+Authorization: Bearer <access_token>；登录签发 JWT（access + refresh）
+项目作用域
+所有项目内资源路径含 /projects/{projectId}
+幂等
+创建类接口支持 Idempotency-Key 请求头
+分页
+?page=1&pageSize=20，返回 { list, total, page, pageSize }
+排序/筛选
+?sort=relevance&order=desc&timeRange=2021-&minQuartile=Q1
+异步任务
+AI/长任务返回 202 { taskId, status: "running" }；轮询 GET /tasks/{taskId} 或订阅 GET /tasks/{taskId}/stream（SSE）
+版本
+响应头 ETag；写操作返回最新 version
+错误码
+见下表
+
+统一错误响应
+{ "code": 40001, "message": "参数错误：missing field 'projectName'", "traceId": "trc_9f3a...", "details": [] }
+code
+HTTP
+含义
+0
+200
+成功
+40001
+400
+参数校验失败
+40101
+401
+未登录 / token 失效
+40301
+403
+无权限（角色不足 / 非导出角色）
+40302
+403
+触发红色阻断（导出合规校验未通过）
+40401
+404
+资源不存在
+40901
+409
+版本冲突（乐观锁）
+42901
+429
+触发限流 / 额度超限
+50001
+500
+服务异常
+
+5.2 鉴权与账号（P0 / G5）
+方法
+路径
+说明
+POST
+/auth/sms/send
+发送验证码（手机号或邮箱）
+POST
+/auth/login
+验证码登录 / 注册
+POST
+/auth/refresh
+刷新 token
+POST
+/auth/logout
+登出
+GET
+/auth/oauth/{provider}/url
+获取第三方登录地址（wechat / chsi）
+POST
+/auth/student/verify-email
+教育邮箱认证
+POST
+/auth/student/verify-chsi
+学信网在线验证报告核验
+GET
+/me
+当前用户信息
+GET
+/me/quota
+当前额度
+GET
+/plans
+套餐列表
+POST
+/subscriptions
+订阅 / 升级套餐
+
+示例：`POST /auth/login`
+// req{ "account": "chen@stu.example.edu.cn", "code": "8386**", "sendId": "sms_1a2b" }// res{ "code": 0, "data": {  "accessToken": "eyJ...", "refreshToken": "eyJ...", "expiresIn": 7200,  "user": { "id": "u_1001", "nickname": "陈同学", "avatarText": "陈",            "major": "心理学", "grade": "研二", "studentVerified": true }}}
+5.3 项目与设置（P1 / P2-3）
+方法
+路径
+说明
+GET
+/projects
+项目列表（含进度、状态、标签）
+POST
+/projects
+新建项目
+GET
+/projects/{id}
+项目详情
+PATCH
+/projects/{id}
+更新项目信息（名称/学科/驱动/DDL）
+DELETE
+/projects/{id}
+删除项目（需二次确认）
+GET
+/projects/{id}/members
+成员列表
+POST
+/projects/{id}/members
+邀请成员（指定角色）
+PATCH
+/projects/{id}/members/{mid}
+修改成员角色/权限
+DELETE
+/projects/{id}/members/{mid}
+移除成员
+GET
+/projects/{id}/versions
+版本历史
+POST
+/projects/{id}/versions/{vid}/rollback
+版本回滚
+PATCH
+/projects/{id}/data-level
+设置数据分级（L0/L1/L2）
+
+Project 对象
+{  "id": "p_2001",  "name": "社交焦虑与手机依赖的关系研究",  "discipline": "心理学",  "design": "data_driven",  "status": "data_analysis",  "progress": 0.45,  "dataLevel": "L1",  "ddl": { "proposal": "2026-09-25", "midterm": "2026-11-15",           "submission": "2026-12-15", "defense": "2027-03-20" },  "tags": ["心理学", "数据驱动", "2 小时前编辑", "中期检查距 12 天"],  "todoCount": 2, "citationCount": 21,  "updatedAt": "2026-09-22T19:00:00+08:00"}
+5.4 工作台（P1）
+方法
+路径
+说明
+GET
+/dashboard/summary
+问候、认证待审、待办聚合、DDL 提醒
+GET
+/dashboard/projects
+我的项目卡列表
+GET
+/dashboard/progress
+项目进度推演 / 阶段完成度
+GET
+/dashboard/todos
+待确认 / 待决策项（含「待项目确认」计数）
+GET
+/dashboard/ddl
+DDL 倒计时日历
+GET
+/notifications
+顶栏通知列表（铃铛红点计数）
+
+5.5 研究可行性分析（P2-1）
+方法
+路径
+说明
+POST
+/projects/{id}/feasibility/report
+生成可行性分析报告（异步）
+GET
+/projects/{id}/feasibility/research-gaps
+研究不足与展望列表
+GET
+/projects/{id}/feasibility/top-reviews
+高被引综述精选
+GET
+/projects/{id}/feasibility/trend
+逐年趋势演变（2021–2025）
+GET
+/projects/{id}/feasibility/score
+三维可行性评分
+GET
+/databases?discipline=psychology&filters=oa,downloadable,api
+公共数据库导航
+POST
+/projects/{id}/databases/{dbId}/import
+一键导入数据库
+POST
+/projects/{id}/feasibility/confirm-direction
+确认方向，进入文献综述
+
+示例：`GET /projects/{id}/feasibility/score`
+{ "code": 0, "data": {  "total": 5,  "dimensions": [    { "key": "literature_quality", "score": 4.2, "text": "核心文献 1,284 篇，高被引占比 12.5%" },    { "key": "data_availability", "score": 3.5, "text": "公开数据集 6 个，另有问卷 350 份，样本量偏小" },    { "key": "design_complexity", "score": 3.0, "text": "涉及多变量，需统一量表" }  ]}}
+5.6 文献综述（P3）
+方法
+路径
+说明
+POST
+/projects/{id}/literature/search
+关键词/自然语言检索
+GET
+/projects/{id}/literature
+文献列表（分页）
+GET
+/literature/{litId}/detail
+文献详情（含 DOI 校验状态）
+POST
+/projects/{id}/literature/selection
+加入已选文献集
+DELETE
+/projects/{id}/literature/selection/{litId}
+移出
+POST
+/projects/{id}/literature/structured-review
+生成结构化综述（异步）
+POST
+/projects/{id}/literature/agent-verify
+双 Agent 核验（异步）
+GET
+/projects/{id}/literature/agent-verify/{taskId}
+核验进度（A 一致性 / B DOI 真实性）
+POST
+/projects/{id}/literature/qa
+知识库问答
+POST
+/projects/{id}/literature/summary-package
+综述生成 / 生成文献包（PDF）
+POST
+/projects/{id}/literature/to-writing
+导入写作（流转 P5）
+
+示例：`GET /projects/{id}/literature/agent-verify/{taskId}`
+{ "code": 0, "data": {  "status": "running",  "agentA": { "name": "内容一致性", "consistency": 0.96, "issues": 1 },  "agentB": { "name": "DOI 真实性", "consistency": 0.99 },  "result": { "pass": 1, "doubt": 2, "fail": 1 },  "details": [{ "litId": "l_88", "level": "fail", "reason": "第 8 条引用数据不实" }]}}
+5.7 数据分析（P4）
+方法
+路径
+说明
+POST
+/projects/{id}/datasets
+上传数据集（multipart，多格式）
+GET
+/projects/{id}/datasets
+数据集列表
+GET
+/datasets/{dsId}/health
+数据体检报告
+GET
+/projects/{id}/methods
+候选统计方法清单（含推荐/优缺点）
+POST
+/projects/{id}/analysis
+选择方法并执行分析（异步）
+GET
+/projects/{id}/analysis/{taskId}
+分析进度 / 结果
+GET
+/projects/{id}/analysis/{runId}/reproducible-code
+可复现代码（Python/R）
+GET
+/projects/{id}/analysis/{runId}/robustness
+稳健性检验结果
+GET
+/projects/{id}/datasets/{dsId}/missing-distribution
+缺失值分布
+
+示例：`GET /datasets/{dsId}/health`
+{ "code": 0, "data": {  "reportDate": "2026-09-22T09:14:00+08:00",  "rowCount": 350, "columnCount": 42, "missingRate": 0.018, "outlierCount": 7,  "problemVariables": [    { "name": "social_support", "issue": "all_missing", "rate": 0.9902, "excluded": true },    { "name": "grade", "issue": "no_variance", "count": 2 }  ]}}
+示例：`POST /projects/{id}/analysis`
+// req{ "datasetId": "ds_31", "method": "process_model_7", "params": { "seed": 42, "bootstrap": 5000 } }// res{ "code": 0, "data": { "taskId": "t_5501", "status": "running" }, "message": "已开始执行分析" }
+5.8 论文写作（P5）
+方法
+路径
+说明
+GET
+/projects/{id}/manuscripts
+文稿列表
+GET
+/manuscripts/{msId}
+文稿详情（正文 + 大纲 + 引用）
+PUT
+/manuscripts/{msId}
+保存正文（乐观锁 version）
+POST
+/projects/{id}/writing/outline
+生成写作大纲（异步）
+POST
+/manuscripts/{msId}/sections/{sid}/generate
+生成章节正文（异步）
+POST
+/manuscripts/{msId}/rewrite
+重写 / 扩写 / 降重 / 学术化改写（仅选中范围）
+GET
+/manuscripts/{msId}/citations
+引用列表（CSL 样式）
+POST
+/manuscripts/{msId}/citations
+新建引用（限已核验文献池）
+POST
+/manuscripts/{msId}/citations/style
+切换引用样式（APA 7 / GB/T 7714）
+POST
+/projects/{id}/writing/zotero/sync
+Zotero 双向同步
+POST
+/projects/{id}/writing/to-journal
+完成初稿 → 选刊（流转 P6）
+
+Manuscript 关键字段：title、abstract、sections[]{ id, level, title, content, wordCount, citationCount }、wordCount、citationCount、aiGeneratedRatio、citationStyle、version
+5.9 选刊 AI（P6）
+方法
+路径
+说明
+POST
+/projects/{id}/journal/recommend
+推荐期刊（可「重新匹配」）
+GET
+/projects/{id}/journal/recommend
+推荐结果（含匹配度）
+GET
+/journals/{journalId}/profile
+期刊画像
+GET
+/journals/{journalId}/ai-policy
+期刊 AI 使用策略声明
+GET
+/projects/{id}/journal/checklist
+投稿前检查清单
+POST
+/projects/{id}/journal/submission-report
+生成投稿报告（入 P8）
+GET
+/projects/{id}/journal/export-candidates
+导出候选包
+
+示例：`GET /projects/{id}/journal/recommend`
+{ "code": 0, "data": { "total": 5, "items": [  { "journalId": "j_1", "name": "Computers in Human Behavior", "quartile": "JCR Q1",    "casQuartile": "中科院 1 区", "impactFactor": 8.9, "publisher": "Elsevier",    "matchScore": 0.94, "scope": "人类与新兴媒体交互，涵盖行为科学/心理/社科" },  { "journalId": "j_3", "name": "心理科学进展", "index": "CSSCI", "casQuartile": "中科院 2 区",    "matchScore": 0.81, "scope": "国内心理学综述类期刊" }]}}
+5.10 模拟评审（P7）
+方法
+路径
+说明
+POST
+/projects/{id}/review/simulate
+启动模拟评审（异步）
+GET
+/projects/{id}/review/{taskId}
+评审进度
+GET
+/projects/{id}/review/{taskId}/issues
+问题列表（按严重度分组）
+GET
+/projects/{id}/review/{taskId}/suggestions
+修改建议 / 全部修改路径
+POST
+/projects/{id}/review/{taskId}/rebuttal-draft
+生成完整 Rebuttal 草稿
+POST
+/projects/{id}/review/{taskId}/export
+输出修改稿与 Rebuttal 草稿
+
+Issue 字段：id、code（H1/H2/D1/S1…）、severity（critical / disputed / style）、title、description、suggestion、status
+5.11 导出中心（P8，合并产物导出 + 合规校验 + AI 使用说明）
+方法
+路径
+说明
+GET
+/projects/{id}/materials
+产物列表（类型/时间/大小/校验状态）
+POST
+/projects/{id}/materials/{mid}/export
+导出单个产物（format: md/docx/pdf/zip）
+POST
+/projects/{id}/exports
+创建批量导出任务（异步）
+GET
+/projects/{id}/exports/{taskId}
+导出任务状态 / 下载地址
+GET
+/projects/{id}/exports/blockers
+导出阻断项 / 合规校验结果（红色阻断 / 未核验 / AI 标识覆盖率）
+POST
+/projects/{id}/exports/blockers/{bid}/confirm
+人工确认放行（「我已确认，允许导出」）
+POST
+/projects/{id}/ai-usage/report
+生成《AI 使用情况说明》校验报告
+GET
+/projects/{id}/ai-usage/report/{reportId}
+报告详情
+
+Material 字段：id、name、type、size、generatedAt、verifyStatus（dual_agent_passed / desensitized / data_integrity_ok）、formats[]
+5.12 定价与额度（G5）
+方法
+路径
+说明
+GET
+/plans
+套餐与权益
+GET
+/plans/quota-table
+额度公示表
+GET
+/me/quota
+当前额度与用量
+POST
+/subscriptions
+订阅 / 升级
+GET
+/billing/rules/overage
+超额处理规则
+
+5.13 通知（顶栏铃铛）
+方法
+路径
+说明
+GET
+/notifications
+通知列表（未读计数）
+POST
+/notifications/{nid}/read
+标记已读
+
+
+6. 数据模型（核心实体）
+User            (id, nickname, avatarText, major, grade, studentVerified, studentVerifyExpireAt)Project         (id, name, discipline, design, status, progress, dataLevel, ddl{}, ownerId, updatedAt)Membership      (id, projectId, userId, role[owner|mentor|collaborator], permissions[])Version         (id, projectId, versionNo, operatorId, summary, createdAt)Dataset         (id, projectId, fileName, format, rowCount, columnCount, verifyStatus)DataHealth      (id, datasetId, reportDate, rowCount, columnCount, missingRate, outlierCount, problemVariables[])Literature      (id, projectId, title, authors, journal, year, quartile, doi, doiVerified, type[article|preprint], abstractConclusion, tags[])AgentVerifyTask (id, projectId, status, agentA{consistency,issues}, agentB{consistency}, result{pass,doubt,fail}, details[])AnalysisRun     (id, projectId, datasetId, method, params, status, sandbox{runId, env, license}, robustness[])Manuscript      (id, projectId, title, abstract, sections[], wordCount, citationCount, aiGeneratedRatio, citationStyle, version)Citation        (id, manuscriptId, title, source, doi, verified, style)Journal         (id, name, quartile, casQuartile, impactFactor, fiveYearIF, publisher, apc, index[], reviewWeeks, acceptRate, matchScore)JournalChecklist(id, projectId, items[{key,label,status,score}])ReviewTask      (id, projectId, status, styleSamples, realReviews, issues[], suggestions[], rebuttalDraft)Material        (id, projectId, name, type, size, generatedAt, verifyStatus, formats[])ExportTask      (id, projectId, materialIds[], format, status, downloadUrl, blockers[])ExportBlocker   (id, projectId, type, severity[red], description, status[pending|confirmed|resolved])AIUsageReport   (id, projectId, reportDate, items[], blockers[], aiLabelCoverage)Quota           (id, userId, plan, dimensions{literatureSearch,reviewGeneration,agentVerification,sandboxMinutes,exportCount}, resetAt)Subscription    (id, userId, plan[student|pro|team], status, periodStart, periodEnd)Notification    (id, userId, type, title, read, createdAt)
+
+7. 状态机
+实体
+状态流转
+项目
+选题中 → 文献综述中 → 数据分析中 → 论文写作中 → 返修中 → 已归档
+学生认证
+未认证 → 认证中 → 已核验 → 失效 → 降级（90 天宽限）
+双 Agent 核验
+核验中 → {通过 / 存疑 / 失败}
+分析方法
+待选择 → 已选择 → 已执行 → 已校验
+导出阻断项
+待确认（红色阻断） → 已确认放行 / 已解决
+导出
+待生成 → 生成中 → 已生成 → 已阻断(存在红色项) → 可下载
+异步任务
+queued → running → succeeded / failed / cancelled
+订阅
+active → expired → grace → cancelled
+
+
+8. 非功能需求
+8.1 安全与合规
+传输 TLS 1.3+，存储 AES-256，等保三级（登录页明示）。
+L1 / L2 数据默认不进入任何模型训练；敏感字段强制脱敏后方可继续（登录页明示）。
+数据分级在「P2-3 项目设置」中设定：L0 公开 / L1 个人（脱敏，仅项目成员可见） / L2 敏感（强制脱敏 + 加密 + 水印溯源）；级别联动 P4 数据导入拦截与 P8 导出校验。
+AI 生成内容合规依据：《人工智能生成合成内容标识办法》、GB 45438-2025、《生成式人工智能服务管理暂行办法》、《个人信息保护法》。
+所有 AI 生成内容导出时自动携带标注记录与生成记录，不可移除核验标识（P8 明示）；AI 标识覆盖率目标 100%。
+关键操作（导出放行、删除、版本回滚）需二次确认并留痕（后端审计能力）。
+8.2 可复现性
+分析在沙箱执行，产出 run_id、运行环境指纹、程序许可证（示例 MIT）。
+支持导出 Python / R 代码包（ZIP） 复现分析（P4 / P8）。
+8.3 可观测性
+后端保留全流程审计日志（导出、拦截、审批、变更等事件），支撑溯源。
+8.4 性能与交互
+列表接口分页；AI 长任务异步化并提供进度（推荐 SSE）。
+文稿编辑采用乐观锁（version）防并发覆盖。
+顶栏导航常驻、切换不闪断；主导航 active 随页面自动切换。
+
+9. 附录
+9.1 页面 – 接口矩阵
+页面
+关键接口组
+P0 登录
+/auth/*、/me
+P1 工作台
+/dashboard/*、/projects、/notifications
+P2-1 研究可行性分析
+/projects/{id}/feasibility/*、/databases
+P3 文献综述
+/projects/{id}/literature/*
+P4 数据分析
+/datasets/*、/projects/{id}/analysis/*、/projects/{id}/methods
+P5 论文写作
+/manuscripts/*、/projects/{id}/writing/*
+P6 选刊 AI
+/projects/{id}/journal/*、/journals/*
+P7 模拟评审
+/projects/{id}/review/*
+P8 导出中心
+/projects/{id}/materials/*、/projects/{id}/exports/*、/projects/{id}/ai-usage/*
+G5 定价
+/plans、/me/quota、/subscriptions
+P2-3 项目设置
+/projects/{id}、/projects/{id}/members、/projects/{id}/versions、/projects/{id}/data-level
+
+9.2 术语表
+术语
+说明
+双 Agent 核验
+两个 Agent 分别做「引用-论断内容一致性」与「DOI 真实性」核验
+Rebuttal 草稿
+针对审稿意见的完整回应草稿
+红色阻断
+导出合规硬性条件未满足，禁止进入导出，需人工确认放行
+数据分级
+L0 公开 / L1 个人 / L2 敏感
+AI 标识完整性
+导出内容中完成 AI 标注的比例（目标 100%）
+
+9.3 设计稿遗留不一致清单（建议设计侧修正）
+P2-3 项目设置的数据分级说明仍引用旧结构名称「G2 通过清单确认影响、G3 导出校验、合规中心」——G2/G4 已删除、G3 已更名 P8，建议更新文案。
+帧命名不统一：P0、P1、P2-1、P3–P8、G5、P2-3 混用两种编号体系（存在 P2-2 空缺），建议统一命名规范。
+P8 导出中心页顶栏无 active 高亮（右侧「导出中心」按钮未高亮），建议补充 active 态以明确当前位置。
+P6 期刊画像处存在乱码文字（如「五年影响因子 12,000 错 APA 7」），建议修正。
+顶栏右侧工具区当前仅「用户区 + 导出中心」，旧版「账号设置 / 新手·专家模式切换」已移除——若仍需账号与模式入口，建议补回或明确收纳位置。
+9.4 交付物
+研宇宙_产品功能与接口需求文档.md（本源文件，v2.0）
+研宇宙_产品功能与接口需求文档.html（可浏览版，含侧边目录）

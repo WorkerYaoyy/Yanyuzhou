@@ -1,0 +1,72 @@
+/* =========================================================
+   研宇宙 Design Tokens —— 来源《需求文档 v2.0》第 3 章
+   设计稿未定义变量集，全部硬编码值固化为 CSS 变量，作为唯一视觉来源
+   ========================================================= */
+:root {
+  /* 色彩：主色 */
+  --color-primary: #2E5FA3;
+  --color-primary-hover: #27528E;
+  --color-primary-active: #204677;
+  --color-primary-weak-bg: #F7F9FC;
+
+  /* 色彩：文字 */
+  --color-text-primary: #1F2937;
+  --color-text-secondary: #4B5563;
+  --color-text-muted: #6B7280;
+  --color-text-tertiary: #9CA3AF;
+
+  /* 色彩：边框与背景 */
+  --color-border: #E5E7EB;
+  --color-bg-page: #FFFFFF;
+  --color-bg-subtle: #F7F9FC;
+  --color-bg-subtle-2: #F3F4F6;
+
+  /* 色彩：成功 */
+  --color-success: #2E7D32;
+  --color-success-bg: #E8F5E9;
+  --color-success-border: #A5D6A7;
+
+  /* 色彩：危险 / 阻断 */
+  --color-danger: #C0392B;
+  --color-danger-bg: #FEF2F2;
+  --color-danger-border: #F5C6C6;
+
+  /* 色彩：警示 */
+  --color-warning: #B45309;
+  --color-warning-bg: #FFF7E6;
+  --color-warning-border: #FFE0A3;
+
+  /* 色彩：信息 */
+  --color-info: #2E5FA3;
+  --color-info-bg: #EAF1FB;
+
+  /* 圆角 */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-full: 9999px;
+
+  /* 尺寸 */
+  --nav-height: 56px;
+  --page-padding-x: 32px;
+  --border-width: 1px;
+  --nav-active-underline: 2px;
+
+  /* 字体 */
+  --font-family: Inter, "PingFang SC", "Microsoft YaHei", sans-serif;
+
+  /* 间距阶梯 4/6/8/10/12/14/16/20/24/28/32/48/64 */
+  --space-1: 4px;
+  --space-2: 6px;
+  --space-3: 8px;
+  --space-4: 10px;
+  --space-5: 12px;
+  --space-6: 14px;
+  --space-7: 16px;
+  --space-8: 20px;
+  --space-9: 24px;
+  --space-10: 28px;
+  --space-11: 32px;
+  --space-12: 48px;
+  --space-13: 64px;
+}
